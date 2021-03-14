@@ -78,7 +78,7 @@ def train(
     logging.info('Starting evaluation...')
     s = time.time()
     results = {}
-    results['valid'] = evaluate(model, datasets['validation'])
+    # results['valid'] = evaluate(model, datasets['validation'])
     results['test'] = evaluate(model, datasets['test'])
     for ds in results:
         logging.info(f'Metrics for {ds} set:')
