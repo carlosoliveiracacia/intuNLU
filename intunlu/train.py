@@ -48,7 +48,7 @@ def train(
         optimizer='Adam'
     )
 
-    logger = TensorBoardLogger('logger', 'summarizer')
+    logger = TensorBoardLogger('logger', f'summarizer_{random_state}')
 
     early_stop_callback = EarlyStopping(
         monitor='val_loss',
