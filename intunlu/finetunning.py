@@ -57,11 +57,25 @@ class SummarizerModel(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
 
-        src_ids, src_mask, labels = batch
+        documents, summaries = batch
+
+        documents = self.tokenizer(
+            documents,
+            max_length=512,
+            padding='longest',
+            return_tensors='pt'
+        )
+        summaries = self.tokenizer(
+            summaries,
+            max_length=512,
+            padding='longest',
+            return_tensors='pt'
+        )
+
+        src_ids, src_mask, labels = documents['input_ids'], documents['attention_mask'], summaries['input_ids']
 
         labels[labels[:, :] == self.tokenizer.pad_token_id] = -100
 
-        # Run the model and get the logits
         outputs = self(
             input_ids=src_ids,
             attention_mask=src_mask,
@@ -83,7 +97,22 @@ class SummarizerModel(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
 
-        src_ids, src_mask, labels = batch
+        documents, summaries = batch
+
+        documents = self.tokenizer(
+            documents,
+            max_length=512,
+            padding='longest',
+            return_tensors='pt'
+        )
+        summaries = self.tokenizer(
+            summaries,
+            max_length=512,
+            padding='longest',
+            return_tensors='pt'
+        )
+
+        src_ids, src_mask, labels = documents['input_ids'], documents['attention_mask'], summaries['input_ids']
 
         labels[labels[:, :] == self.tokenizer.pad_token_id] = -100
 
@@ -102,6 +131,19 @@ class SummarizerModel(pl.LightningModule):
         print(f'Val loss: {avg_loss} (epoch {self.current_epoch})')
         self.log('val_loss', avg_loss, on_step=False, on_epoch=True, prog_bar=False)
 
+
+class SummaryDataset(Dataset):
+
+    def __init__(self, data):
+        self.data = data
+
+    def __len__(self):
+        return len(self.data['document'])
+
+    def __getitem__(self, idx):
+        return self.data['document'][idx], self.data['summary'][idx]
+
+
 # Create a dataloading module as per the PyTorch Lightning Docs
 class SummaryDataModule(pl.LightningDataModule):
     def __init__(
@@ -119,47 +161,36 @@ class SummaryDataModule(pl.LightningDataModule):
         self.train, self.valid, self.test = self.load_split_prepare_data()
 
     def load_split_prepare_data(self):
+
         dataset = load_dataset('xsum')
         out = {}
         for ds in dataset.keys():
             n = self.max_num_samples if self.max_num_samples is not None else len(dataset[ds]['document'])
-            dataset_x = self.tokenizer(
-                dataset[ds]['document'][:n],
-                max_length=self.max_length,
-                padding='longest',
-                return_tensors='pt')
-
-            dataset_y = self.tokenizer(
-                dataset[ds]['summary'][:n],
-                max_length=self.max_length,
-                padding='longest',
-                return_tensors='pt'
-            )
             out[ds] = {
-                'input_ids': dataset_x['input_ids'],
-                'attention_mask': dataset_x['attention_mask'],
-                'labels': dataset_y['input_ids']
+                'document': dataset[ds]['document'][:n],
+                'summary': dataset[ds]['summary'][:n]
             }
 
         return out['train'], out['validation'], out['test']
 
     # Load the training, validation  sets in Pytorch Dataset objects
     def train_dataloader(self):
-        dataset = TensorDataset(self.train['input_ids'], self.train['attention_mask'], self.train['labels'])
+        dataset = SummaryDataset(self.train)
         train_data = DataLoader(
             dataset,
             sampler=RandomSampler(dataset),
             batch_size=self.batch_size,
             drop_last=True
         )
+        print('test', next(iter(train_data)))
         return train_data
 
     def val_dataloader(self):
-        dataset = TensorDataset(self.valid['input_ids'], self.valid['attention_mask'], self.valid['labels'])
+        dataset = SummaryDataset(self.valid)
         val_data = DataLoader(dataset, batch_size=self.batch_size, drop_last=True)
         return val_data
 
     def test_dataloader(self):
-        dataset = TensorDataset(self.test['input_ids'], self.test['attention_mask'], self.test['labels'])
+        dataset = SummaryDataset(self.test)
         val_data = DataLoader(dataset, batch_size=self.batch_size, drop_last=True)
         return val_data

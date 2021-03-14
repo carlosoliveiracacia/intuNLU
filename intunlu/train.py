@@ -12,7 +12,7 @@ def train(
         model_name='t5-small',
         batch_size=8,
         n_max_epochs=10,
-        random_state=1234,
+        random_state=1234
 ):
 
     pl.utilities.seed.seed_everything(random_state)
@@ -34,7 +34,7 @@ def train(
         optimizer='Adam'
     )
 
-    logger = TensorBoardLogger('logger_dir' 'summarizer')
+    logger = TensorBoardLogger('logger', 'summarizer')
 
     early_stop_callback = EarlyStopping(
         monitor='val_loss',
@@ -56,6 +56,8 @@ def train(
 
     trainer.fit(model, data)
     trainer.save_checkpoint(f'summarizer_{random_state}')
+
+#    model.generate()
 
 if __name__ == '__main__':
     train()
