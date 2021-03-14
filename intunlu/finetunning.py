@@ -1,7 +1,6 @@
 import pytorch_lightning as pl
 import torch
 
-from datasets import load_dataset
 from torch.utils.data import DataLoader, Dataset, RandomSampler
 from transformers import T5ForConditionalGeneration
 
@@ -150,6 +149,8 @@ class SummaryDataset(Dataset):
 class SummaryDataModule(pl.LightningDataModule):
     def __init__(
             self,
+            train_dataset,
+            valid_dataset,
             tokenizer,
             batch_size,
             max_num_samples=None,
@@ -160,20 +161,8 @@ class SummaryDataModule(pl.LightningDataModule):
         self.batch_size = batch_size
         self.max_num_samples = max_num_samples
         self.max_length = max_length
-        self.train, self.valid, self.test = self.load_split_prepare_data()
-
-    def load_split_prepare_data(self):
-
-        dataset = load_dataset('xsum')
-        out = {}
-        for ds in dataset.keys():
-            n = self.max_num_samples if self.max_num_samples is not None else len(dataset[ds]['document'])
-            out[ds] = {
-                'document': dataset[ds]['document'][:n],
-                'summary': dataset[ds]['summary'][:n]
-            }
-
-        return out['train'], out['validation'], out['test']
+        self.train = train_dataset
+        self.valid = valid_dataset
 
     # Load the training, validation  sets in Pytorch Dataset objects
     def train_dataloader(self):
@@ -188,10 +177,5 @@ class SummaryDataModule(pl.LightningDataModule):
 
     def val_dataloader(self):
         dataset = SummaryDataset(self.valid)
-        val_data = DataLoader(dataset, batch_size=self.batch_size, drop_last=True)
-        return val_data
-
-    def test_dataloader(self):
-        dataset = SummaryDataset(self.test)
         val_data = DataLoader(dataset, batch_size=self.batch_size, drop_last=True)
         return val_data
