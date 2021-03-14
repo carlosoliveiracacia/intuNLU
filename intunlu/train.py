@@ -1,3 +1,4 @@
+import logging
 import pickle
 import pytorch_lightning as pl
 import random
@@ -20,6 +21,9 @@ def train(
         random_state=1234,
         max_num_samples=2000
 ):
+
+    setup_logger(random_state)
+
     random.seed(1234)  # this is meant to be fixed so we can train on a fixed subset of the original training set
     datasets = load_data(max_num_samples=max_num_samples)
 
@@ -64,24 +68,24 @@ def train(
         callbacks=[early_stop_callback]
     )
 
-    print('Starting training...')
+    logging.info('Starting training...')
     s = time.time()
     trainer.fit(model, data)
-    print('Done with training.')
-    print(f'(Took {time.time() - s} seconds.)')
+    logging.info('Done with training.')
+    logging.info(f'(Took {time.time() - s} seconds.)')
     trainer.save_checkpoint(f'summarizer_{random_state}')
 
-    print('Starting evaluation...')
+    logging.info('Starting evaluation...')
     s = time.time()
     results = {}
     results['valid'] = evaluate(model, datasets['validation'])
     results['test'] = evaluate(model, datasets['test'])
     for ds in results:
-        print(f'Metrics for {ds} set:')
+        logging.info(f'Metrics for {ds} set:')
         for m in ['rouge1', 'rouge2', 'rougeL']:
-            print(f'Average {m} score: {sum(results[ds][m]) / len(results[ds][m])}')
-    print('Done with evaluation.')
-    print(f'(Took {time.time() - s} seconds.)')
+            logging.info(f'Average {m} score: {sum(results[ds][m]) / len(results[ds][m])}')
+    logging.info('Done with evaluation.')
+    logging.info(f'(Took {time.time() - s} seconds.)')
     with open(f'results_{random_state}.pkl', 'wb')as f:
         pickle.dump(results, f)
 
@@ -93,12 +97,12 @@ def load_data(max_num_samples=None):
     for ds in ['train', 'validation', 'test']:
         dataset = load_dataset('xsum', split=ds)
         N = len(dataset)
-        print(f'{ds} dataset: initial # of samples is {N}.')
+        logging.info(f'{ds} dataset: initial # of samples is {N}.')
         if max_num_samples is not None:
             n = min(max_num_samples, N)
         else:
             n = N
-        print(f'{ds} dataset: will effectively use {n} samples.')
+        logging.info(f'{ds} dataset: will effectively use {n} samples.')
         dataset = list(zip(dataset['document'], dataset['summary']))
         dataset = random.sample(dataset, n)
         datasets[ds] = {
@@ -141,14 +145,14 @@ def evaluate(model, dataset):
             )
             pred = model.tokenizer.convert_ids_to_tokens(pred[0], skip_special_tokens=True)
             pred = model.tokenizer.convert_tokens_to_string(pred).replace(' . ', '. ')
-            if i < 2:
-                print('The input document:')
-                print(dataset['document'][i])
-                print('The reference summary:')
-                print(dataset['summary'][i])
-                print('The predicted summary:')
-                print(pred)
-                print()
+            # if i < 2:
+            #     logging.info('The input document:')
+            #     logging.info(dataset['document'][i])
+            #     logging.info('The reference summary:')
+            #     logging.info(dataset['summary'][i])
+            #     logging.info('The predicted summary:')
+            #     logging.info(pred)
+            #     logging.info()
         results['reference_summary'].append(dataset['summary'][i])
         results['predicted_summary'].append(pred)
         scores = scorer.score(results['reference_summary'][0], results['predicted_summary'][0])
@@ -157,6 +161,17 @@ def evaluate(model, dataset):
         results['rougeL'].append(scores['rougeL'][2])
 
     return results
+
+def setup_logger(random_state):
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  [%(filename)s:%(lineno)s] [%(funcName)20s()] %(message)s",
+        handlers=[
+            logging.FileHandler(f"{random_state}.log"),
+            logging.StreamHandler()
+        ]
+    )
 
 if __name__ == '__main__':
     train()

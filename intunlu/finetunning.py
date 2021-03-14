@@ -1,3 +1,4 @@
+import logging
 import pytorch_lightning as pl
 import torch
 
@@ -92,7 +93,7 @@ class SummarizerModel(pl.LightningModule):
 
     def training_epoch_end(self, training_step_outputs):
         avg_loss = torch.stack([x['loss'] for x in training_step_outputs]).mean()
-        print(f'Train loss: {avg_loss} (epoch {self.current_epoch})')
+        logging.info(f'Train loss: {avg_loss} (epoch {self.current_epoch})')
         self.log('train_loss', avg_loss, on_step=False, on_epoch=True, prog_bar=False)
 
     def validation_step(self, batch, batch_idx):
@@ -129,7 +130,7 @@ class SummarizerModel(pl.LightningModule):
 
     def validation_epoch_end(self, validation_step_outputs):
         avg_loss = torch.stack([x['loss'] for x in validation_step_outputs]).mean()
-        print(f'Val loss: {avg_loss} (epoch {self.current_epoch})')
+        logging.info(f'Val loss: {avg_loss} (epoch {self.current_epoch})')
         self.log('val_loss', avg_loss, on_step=False, on_epoch=True, prog_bar=False)
 
 
