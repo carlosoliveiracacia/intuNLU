@@ -184,7 +184,6 @@ class SummaryDataModule(pl.LightningDataModule):
             batch_size=self.batch_size,
             drop_last=True
         )
-        print('test', next(iter(train_data)))
         return train_data
 
     def val_dataloader(self):

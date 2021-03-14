@@ -13,7 +13,8 @@ def train(
         model_name='t5-small',
         batch_size=8,
         n_max_epochs=10,
-        random_state=1234
+        random_state=1234,
+        max_num_samples=None
 ):
 
     pl.utilities.seed.seed_everything(random_state)
@@ -23,7 +24,7 @@ def train(
     data = SummaryDataModule(
         tokenizer,
         batch_size,
-        max_num_samples=32
+        max_num_samples=max_num_samples
     )
 
     model = SummarizerModel(
@@ -59,7 +60,7 @@ def train(
     s = time.time()
     trainer.fit(model, data)
     print('Done with training.')
-    print(f'(Took {time.tine() - s} seconds.)')
+    print(f'(Took {time.time() - s} seconds.)')
     trainer.save_checkpoint(f'summarizer_{random_state}')
 
 #    model.generate()
