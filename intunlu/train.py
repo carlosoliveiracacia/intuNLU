@@ -1,4 +1,5 @@
 import pytorch_lightning as pl
+import time
 import torch
 
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
@@ -54,7 +55,11 @@ def train(
         callbacks=[early_stop_callback]
     )
 
+    print('Starting training...')
+    s = time.time()
     trainer.fit(model, data)
+    print('Done with training.')
+    print(f'(Took {time.tine() - s} seconds.)')
     trainer.save_checkpoint(f'summarizer_{random_state}')
 
 #    model.generate()
