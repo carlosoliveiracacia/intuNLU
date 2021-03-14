@@ -121,6 +121,7 @@ def evaluate(model, dataset):
     }
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.model.to(device)
     for i in range(len(dataset['document'])):
         document = model.tokenizer(
             'summarize: ' + dataset['document'][i],
