@@ -106,7 +106,7 @@ def load_data(max_num_samples=None):
         dataset = list(zip(dataset['document'], dataset['summary']))
         dataset = random.sample(dataset, n)
         datasets[ds] = {
-            'document': ['summarize: ' + e[0] for e in dataset],
+            'document': ['summarize: ' + e[0].replace('\n', ' ') for e in dataset],
             'summary': [e[1] for e in dataset]
         }
 
@@ -145,14 +145,13 @@ def evaluate(model, dataset):
             )
             pred = model.tokenizer.convert_ids_to_tokens(pred[0], skip_special_tokens=True)
             pred = model.tokenizer.convert_tokens_to_string(pred).replace(' . ', '. ')
-            # if i < 2:
-            #     logging.info('The input document:')
-            #     logging.info(dataset['document'][i])
-            #     logging.info('The reference summary:')
-            #     logging.info(dataset['summary'][i])
-            #     logging.info('The predicted summary:')
-            #     logging.info(pred)
-            #     logging.info()
+            if i < 2:
+                logging.info('The input document:')
+                logging.info(dataset['document'][i])
+                logging.info('The reference summary:')
+                logging.info(dataset['summary'][i])
+                logging.info('The predicted summary:')
+                logging.info(pred)
         results['reference_summary'].append(dataset['summary'][i])
         results['predicted_summary'].append(pred)
         scores = scorer.score(results['reference_summary'][0], results['predicted_summary'][0])
