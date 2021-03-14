@@ -23,7 +23,6 @@ class SummarizerModel(pl.LightningModule):
         self.learning_rate = learning_rate
         self.tokenizer = tokenizer
         self.optimizer = optimizer
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         if freeze_encoder:
             self._freeze_params(self.model.get_encoder())
@@ -77,10 +76,11 @@ class SummarizerModel(pl.LightningModule):
 
         labels[labels[:, :] == self.tokenizer.pad_token_id] = -100
 
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         outputs = self(
-            input_ids=src_ids.to(self.device),
-            attention_mask=src_mask.to(self.device),
-            labels=labels.to(self.device)
+            input_ids=src_ids.to(device),
+            attention_mask=src_mask.to(device),
+            labels=labels.to(device)
         )
 
         loss = outputs.loss
@@ -117,10 +117,11 @@ class SummarizerModel(pl.LightningModule):
 
         labels[labels[:, :] == self.tokenizer.pad_token_id] = -100
 
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         outputs = self(
-            input_ids=src_ids.to(self.device),
-            attention_mask=src_mask.to(self.device),
-            labels=labels.to(self.device)
+            input_ids=src_ids.to(device),
+            attention_mask=src_mask.to(device),
+            labels=labels.to(device)
         )
 
         loss = outputs.loss
