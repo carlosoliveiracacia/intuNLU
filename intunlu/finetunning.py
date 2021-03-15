@@ -15,7 +15,8 @@ class SummarizerModel(pl.LightningModule):
             learning_rate=2e-5,
             freeze_encoder=False,
             freeze_embeds=False,
-            optimizer='Adam'
+            optimizer='Adam',
+            max_input_length=300
     ):
         super().__init__()
         self.save_hyperparameters()
@@ -23,6 +24,7 @@ class SummarizerModel(pl.LightningModule):
         self.learning_rate = learning_rate
         self.tokenizer = tokenizer
         self.optimizer = optimizer
+        self.max_input_length = max_input_length
 
         if freeze_encoder:
             self._freeze_params(self.model.get_encoder())
@@ -61,13 +63,13 @@ class SummarizerModel(pl.LightningModule):
 
         documents = self.tokenizer(
             documents,
-            max_length=512,
+            max_length=self.max_input_length,
             padding='longest',
             return_tensors='pt'
         )
         summaries = self.tokenizer(
             summaries,
-            max_length=512,
+            max_length=self.max_input_length,
             padding='longest',
             return_tensors='pt'
         )
@@ -102,13 +104,13 @@ class SummarizerModel(pl.LightningModule):
 
         documents = self.tokenizer(
             documents,
-            max_length=512,
+            max_length=self.max_input_length,
             padding='longest',
             return_tensors='pt'
         )
         summaries = self.tokenizer(
             summaries,
-            max_length=512,
+            max_length=self.max_input_length,
             padding='longest',
             return_tensors='pt'
         )
@@ -154,14 +156,12 @@ class SummaryDataModule(pl.LightningDataModule):
             valid_dataset,
             tokenizer,
             batch_size,
-            max_num_samples=None,
-            max_length=512
+            max_num_samples=None
     ):
         super().__init__()
         self.tokenizer = tokenizer
         self.batch_size = batch_size
         self.max_num_samples = max_num_samples
-        self.max_length = max_length
         self.train = train_dataset
         self.valid = valid_dataset
 

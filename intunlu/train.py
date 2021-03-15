@@ -16,6 +16,7 @@ from intunlu.finetunning import SummaryDataModule, SummarizerModel
 
 def train(
         model_name='t5-small',
+        max_input_length=300,
         batch_size=2,
         n_max_epochs=10,
         random_state=1234,
@@ -79,7 +80,7 @@ def train(
     s = time.time()
     results = {}
     # results['valid'] = evaluate(model, datasets['validation'])
-    results['test'] = evaluate(model, datasets['test'])
+    results['test'] = evaluate(model, datasets['test'], max_input_length)
     for ds in results:
         logging.info(f'Metrics for {ds} set:')
         for m in ['rouge1', 'rouge2', 'rougeL']:
@@ -112,7 +113,7 @@ def load_data(max_num_samples=None):
 
     return datasets
 
-def evaluate(model, dataset):
+def evaluate(model, dataset, max_input_length):
 
     scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=False)
 
@@ -129,7 +130,7 @@ def evaluate(model, dataset):
     for i in range(len(dataset['document'])):
         document = model.tokenizer(
             'summarize: ' + dataset['document'][i],
-            max_length=512,
+            max_length=max_input_length,
             padding='longest',
             return_tensors='pt'
         )
@@ -140,7 +141,7 @@ def evaluate(model, dataset):
                 use_cache=True,
                 decoder_start_token_id=model.tokenizer.pad_token_id,
                 num_beams=1,  # greedy search
-                max_length=512,
+                max_length=max_input_length,
                 early_stopping=True
             )
             pred = model.tokenizer.convert_ids_to_tokens(pred[0], skip_special_tokens=True)
