@@ -20,7 +20,8 @@ def train(
         batch_size=2,
         n_max_epochs=10,
         random_state=1234,
-        max_num_samples=2000
+        max_num_samples=2000,
+        learning_rate=0.001
 ):
 
     setup_logger(random_state)
@@ -43,7 +44,7 @@ def train(
     model = SummarizerModel(
         model_name=model_name,
         tokenizer=tokenizer,
-        learning_rate=2e-5,
+        learning_rate=learning_rate,
         freeze_encoder=False,
         freeze_embeds=False,
         optimizer='Adam',
