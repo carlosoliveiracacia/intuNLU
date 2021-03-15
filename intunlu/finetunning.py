@@ -65,12 +65,14 @@ class SummarizerModel(pl.LightningModule):
             documents,
             max_length=self.max_input_length,
             padding='longest',
+            truncation=True,
             return_tensors='pt'
         )
         summaries = self.tokenizer(
             summaries,
             max_length=self.max_input_length,
             padding='longest',
+            truncation=True,
             return_tensors='pt'
         )
 
@@ -106,12 +108,14 @@ class SummarizerModel(pl.LightningModule):
             documents,
             max_length=self.max_input_length,
             padding='longest',
+            truncation=True,
             return_tensors='pt'
         )
         summaries = self.tokenizer(
             summaries,
             max_length=self.max_input_length,
             padding='longest',
+            truncation=True,
             return_tensors='pt'
         )
 

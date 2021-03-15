@@ -16,7 +16,7 @@ from intunlu.finetunning import SummaryDataModule, SummarizerModel
 
 def train(
         model_name='t5-small',
-        max_input_length=300,
+        max_input_length=512,
         batch_size=2,
         n_max_epochs=10,
         random_state=1234,
@@ -132,6 +132,7 @@ def evaluate(model, dataset, max_input_length):
             'summarize: ' + dataset['document'][i],
             max_length=max_input_length,
             padding='longest',
+            truncation=True,
             return_tensors='pt'
         )
         with torch.no_grad():
