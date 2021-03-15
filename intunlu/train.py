@@ -46,7 +46,8 @@ def train(
         learning_rate=2e-5,
         freeze_encoder=False,
         freeze_embeds=False,
-        optimizer='Adam'
+        optimizer='Adam',
+        max_input_length=max_input_length
     )
 
     logger = TensorBoardLogger('logger', f'summarizer_{random_state}')
