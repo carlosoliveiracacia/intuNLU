@@ -33,7 +33,7 @@ def train(
     if 't5' in model_name:
         tokenizer = T5Tokenizer.from_pretrained(model_name)
     elif 'bart' in model_name:
-        tokenizer = BartTokenizer.from_pretrained(model_name)
+        tokenizer = BartTokenizer.from_pretrained(model_name.replace(''))
 
     data = SummaryDataModule(
         datasets['train'],
@@ -147,7 +147,6 @@ def evaluate(model, dataset):
                 use_cache=True,
                 decoder_start_token_id=model.tokenizer.pad_token_id,
                 num_beams=1,  # greedy search
-                max_length=max_input_length,
                 early_stopping=True
             )
             pred = model.tokenizer.convert_ids_to_tokens(pred[0], skip_special_tokens=True)
