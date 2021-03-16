@@ -3,7 +3,7 @@ import pytorch_lightning as pl
 import torch
 
 from torch.utils.data import DataLoader, Dataset, RandomSampler
-from transformers import T5ForConditionalGeneration
+from transformers import T5ForConditionalGeneration, BartForConditionalGeneration
 
 
 class SummarizerModel(pl.LightningModule):
@@ -15,16 +15,17 @@ class SummarizerModel(pl.LightningModule):
             learning_rate=2e-5,
             freeze_encoder=False,
             freeze_embeds=False,
-            optimizer='Adam',
-            max_input_length=300
+            optimizer='Adam'
     ):
         super().__init__()
         self.save_hyperparameters()
-        self.model = T5ForConditionalGeneration.from_pretrained(model_name)
+        if 't5' in model_name:
+            self.model = T5ForConditionalGeneration.from_pretrained(model_name)
+        elif 'bart' in model_name:
+            self.model = BartForConditionalGeneration.from_pretrained(model_name)
         self.learning_rate = learning_rate
         self.tokenizer = tokenizer
         self.optimizer = optimizer
-        self.max_input_length = max_input_length
 
         if freeze_encoder:
             self._freeze_params(self.model.get_encoder())
@@ -63,14 +64,12 @@ class SummarizerModel(pl.LightningModule):
 
         documents = self.tokenizer(
             documents,
-            max_length=self.max_input_length,
             padding='longest',
             truncation=True,
             return_tensors='pt'
         )
         summaries = self.tokenizer(
             summaries,
-            max_length=self.max_input_length,
             padding='longest',
             truncation=True,
             return_tensors='pt'
@@ -106,14 +105,12 @@ class SummarizerModel(pl.LightningModule):
 
         documents = self.tokenizer(
             documents,
-            max_length=self.max_input_length,
             padding='longest',
             truncation=True,
             return_tensors='pt'
         )
         summaries = self.tokenizer(
             summaries,
-            max_length=self.max_input_length,
             padding='longest',
             truncation=True,
             return_tensors='pt'
