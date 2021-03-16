@@ -33,7 +33,7 @@ def train(
     if 't5' in model_name:
         tokenizer = T5Tokenizer.from_pretrained(model_name)
     elif 'bart' in model_name:
-        tokenizer = BartTokenizer.from_pretrained(model_name.replace(''))
+        tokenizer = BartTokenizer.from_pretrained(model_name)
 
     data = SummaryDataModule(
         datasets['train'],
