@@ -24,16 +24,16 @@ def generate(models, document, device, max_input_length):
     min_score = None
     for model in models:
         pred = model.model.generate(
-                    input_ids=document['input_ids'].to(device),
-                    attention_mask=document['attention_mask'].to(device),
-                    use_cache=True,
-                    decoder_start_token_id=model.tokenizer.pad_token_id,
-                    num_beams=1,  # greedy search
-                    max_length=max_input_length,
-                    early_stopping=True,
-                    return_dict_in_generate=True,
-                    output_scores=True
-                )
+            input_ids=document['input_ids'].to(device),
+            attention_mask=document['attention_mask'].to(device),
+            use_cache=True,
+            decoder_start_token_id=model.tokenizer.pad_token_id,
+            num_beams=1,  # greedy search
+            max_length=max_input_length,
+            early_stopping=True,
+            return_dict_in_generate=True,
+            output_scores=True
+        )
         col_len = max(col_len, len(pred[0]))
         seqs.append(pred[0])
 
@@ -42,7 +42,7 @@ def generate(models, document, device, max_input_length):
         if min_score is None:
             min_score = min(scores[-1])
         else:
-            min_score = min(min_score, min(scores[-1])-1.0)
+            min_score = min(min_score, min(scores[-1]) - 1.0)
     final_output = []
     seqs, scores = fill_matrix(col_len, min_score, seqs, scores)
     for j in range(len(seqs[0])):

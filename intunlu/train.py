@@ -24,7 +24,6 @@ def train(
         random_state=1234,
         max_num_samples=2000
 ):
-
     setup_logger(random_state)
 
     random.seed(1234)  # this is meant to be fixed so we can train on a fixed subset of the original training set
@@ -68,7 +67,7 @@ def train(
         min_epochs=1,
         auto_lr_find=False,
         accelerator='dp' if torch.cuda.device_count() > 1 else None,
-        logger = logger,
+        logger=logger,
         callbacks=[early_stop_callback]
     )
 
@@ -95,7 +94,6 @@ def train(
 
 
 def load_data(max_num_samples=None):
-
     # load datasets and trim them down as needed
     datasets = {}
     for ds in ['train', 'validation', 'test']:
@@ -117,11 +115,7 @@ def load_data(max_num_samples=None):
     return datasets
 
 
-
-
-
 def evaluate(model, dataset, max_input_length):
-
     scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=False)
 
     results = {
@@ -162,8 +156,8 @@ def evaluate(model, dataset, max_input_length):
 
     return results
 
-def setup_logger(random_state):
 
+def setup_logger(random_state):
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  [%(filename)s:%(lineno)s] [%(funcName)20s()] %(message)s",
@@ -172,6 +166,7 @@ def setup_logger(random_state):
             logging.StreamHandler()
         ]
     )
+
 
 if __name__ == '__main__':
     train()
