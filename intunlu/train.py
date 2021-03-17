@@ -145,7 +145,8 @@ def evaluate(model, dataset, max_input_length):
                 num_beams=1,  # greedy search
                 max_length=max_input_length,
                 early_stopping=True,
-                return_dict_in_generate=True
+                return_dict_in_generate=True,
+                output_scores=True
             )
             logging.info("-"*10+"pred"+"-"*10)
             logging.info(pred)
