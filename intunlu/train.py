@@ -144,8 +144,15 @@ def evaluate(model, dataset, max_input_length):
                 decoder_start_token_id=model.tokenizer.pad_token_id,
                 num_beams=1,  # greedy search
                 max_length=max_input_length,
-                early_stopping=True
+                early_stopping=True,
+                return_dict_in_generate=True
             )
+            logging.info("-"*10+"pred"+"-"*10)
+            logging.info(pred)
+            logging.info("-"*10+"pred[0]"+"-"*10)
+            logging.info(pred[0])
+            logging.info("-"*10+"pred[1]"+"-"*10)
+            logging.info(pred[1])
             pred = model.tokenizer.convert_ids_to_tokens(pred[0], skip_special_tokens=True)
             pred = model.tokenizer.convert_tokens_to_string(pred).replace(' . ', '. ')
             if i < 2:
