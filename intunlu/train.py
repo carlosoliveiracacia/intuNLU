@@ -1,5 +1,6 @@
 import logging
 import pickle
+
 import pytorch_lightning as pl
 import random
 import time
@@ -12,6 +13,7 @@ from rouge_score import rouge_scorer
 from transformers import T5Tokenizer
 
 from intunlu.finetunning import SummaryDataModule, SummarizerModel
+from intunlu.generate_ensemble import *
 
 
 def train(
@@ -114,6 +116,10 @@ def load_data(max_num_samples=None):
 
     return datasets
 
+
+
+
+
 def evaluate(model, dataset, max_input_length):
 
     scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=False)
@@ -137,23 +143,7 @@ def evaluate(model, dataset, max_input_length):
             return_tensors='pt'
         )
         with torch.no_grad():
-            pred = model.model.generate(
-                input_ids=document['input_ids'].to(device),
-                attention_mask=document['attention_mask'].to(device),
-                use_cache=True,
-                decoder_start_token_id=model.tokenizer.pad_token_id,
-                num_beams=1,  # greedy search
-                max_length=max_input_length,
-                early_stopping=True,
-                return_dict_in_generate=True,
-                output_scores=True
-            )
-            logging.info("-"*10+"pred"+"-"*10)
-            logging.info(pred)
-            logging.info("-"*10+"pred[0]"+"-"*10)
-            logging.info(pred[0])
-            logging.info("-"*10+"pred[1]"+"-"*10)
-            logging.info(pred[1])
+            pred = generate([model], document, device, max_input_length)
             pred = model.tokenizer.convert_ids_to_tokens(pred[0], skip_special_tokens=True)
             pred = model.tokenizer.convert_tokens_to_string(pred).replace(' . ', '. ')
             if i < 2:
