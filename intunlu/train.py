@@ -63,7 +63,7 @@ def train(
     )
 
     trainer = pl.Trainer(
-        gpus=torch.cuda.device_count(),
+        gpus=torch.cuda.device_count()-1,
         max_epochs=n_max_epochs,
         min_epochs=1,
         auto_lr_find=False,
@@ -78,9 +78,6 @@ def train(
     logging.info('Done with training.')
     logging.info(f'(Took {time.time() - s} seconds.)')
     trainer.save_checkpoint(f'summarizer_{random_state}')
-
-    # model_inference = pl.LightningModule.load_from_checkpoint(f'summarizer_{random_state}')
-    # model_inference.freeze()
 
     logging.info('Starting evaluation...')
     s = time.time()
@@ -132,6 +129,7 @@ def evaluate(model, dataset):
     }
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device('cpu')
     model.model.to(device)
     for i in range(len(dataset['document'])):
         document = model.tokenizer(
