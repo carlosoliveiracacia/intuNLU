@@ -10,18 +10,18 @@ from datasets import load_dataset
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.loggers import TensorBoardLogger
 from rouge_score import rouge_scorer
-from transformers import T5Tokenizer
+from transformers import T5Tokenizer, BartTokenizer
 
 from intunlu.finetunning import SummaryDataModule, SummarizerModel
 
 
 def train(
         model_name='t5-small',
-        max_input_length=512,
         batch_size=2,
         n_max_epochs=10,
         random_state=1234,
-        max_num_samples=2000
+        max_num_samples=2000,
+        learning_rate=2e-5
 ):
     setup_logger(random_state)
 
@@ -30,7 +30,10 @@ def train(
 
     pl.utilities.seed.seed_everything(random_state)
 
-    tokenizer = T5Tokenizer.from_pretrained(model_name)
+    if 't5' in model_name:
+        tokenizer = T5Tokenizer.from_pretrained(model_name)
+    elif 'bart' in model_name:
+        tokenizer = BartTokenizer.from_pretrained(model_name)
 
     data = SummaryDataModule(
         datasets['train'],
@@ -43,11 +46,10 @@ def train(
     model = SummarizerModel(
         model_name=model_name,
         tokenizer=tokenizer,
-        learning_rate=2e-5,
+        learning_rate=learning_rate,
         freeze_encoder=False,
         freeze_embeds=False,
-        optimizer='Adam',
-        max_input_length=max_input_length
+        optimizer='Adam'
     )
 
     logger = TensorBoardLogger('logger', f'summarizer_{random_state}')
@@ -61,7 +63,7 @@ def train(
     )
 
     trainer = pl.Trainer(
-        gpus=torch.cuda.device_count(),
+        gpus=torch.cuda.device_count()-1,
         max_epochs=n_max_epochs,
         min_epochs=1,
         auto_lr_find=False,
@@ -81,7 +83,7 @@ def train(
     s = time.time()
     results = {}
     # results['valid'] = evaluate(model, datasets['validation'])
-    results['test'] = evaluate(model, datasets['test'], max_input_length)
+    results['test'] = evaluate(model, datasets['test'])
     for ds in results:
         logging.info(f'Metrics for {ds} set:')
         for m in ['rouge1', 'rouge2', 'rougeL']:
@@ -114,7 +116,8 @@ def load_data(max_num_samples=None):
     return datasets
 
 
-def evaluate(model, dataset, max_input_length):
+def evaluate(model, dataset):
+
     scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=False)
 
     results = {
@@ -126,11 +129,11 @@ def evaluate(model, dataset, max_input_length):
     }
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device('cpu')
     model.model.to(device)
     for i in range(len(dataset['document'])):
         document = model.tokenizer(
             'summarize: ' + dataset['document'][i],
-            max_length=max_input_length,
             padding='longest',
             truncation=True,
             return_tensors='pt'
@@ -142,7 +145,6 @@ def evaluate(model, dataset, max_input_length):
                 use_cache=True,
                 decoder_start_token_id=model.tokenizer.pad_token_id,
                 num_beams=1,  # greedy search
-                max_length=max_input_length,
                 early_stopping=True
             )
             pred = model.tokenizer.convert_ids_to_tokens(pred[0], skip_special_tokens=True)
