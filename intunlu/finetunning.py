@@ -80,7 +80,6 @@ class SummarizerModel(pl.LightningModule):
         labels[labels[:, :] == self.tokenizer.pad_token_id] = -100
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        device = torch.device('cpu')
         outputs = self(
             input_ids=src_ids.to(device),
             attention_mask=src_mask.to(device),
@@ -122,7 +121,6 @@ class SummarizerModel(pl.LightningModule):
         labels[labels[:, :] == self.tokenizer.pad_token_id] = -100
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        device = torch.device('cpu')
         outputs = self(
             input_ids=src_ids.to(device),
             attention_mask=src_mask.to(device),
