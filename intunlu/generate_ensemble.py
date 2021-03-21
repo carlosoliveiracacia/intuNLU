@@ -16,13 +16,13 @@ def fill_matrix(col_len, min_score, seqs, scores):
     return seqs, scores
 
 
-def generate(models, document, device, max_input_length, ensemble='max'):
+def generate(model_list, document, device, max_input_length, ensemble='max'):
     logging.info("Start generate...")
     seqs = []
     scores = []
     col_len = 0
     min_score = None
-    for model in models:
+    for model in model_list:
         pred = model.model.generate(
             input_ids=document['input_ids'].to(device),
             attention_mask=document['attention_mask'].to(device),
