@@ -64,15 +64,15 @@ class EnsembleGenerator:
             print(f"Setting `pad_token_id` to `eos_token_id`:{eos_token_id} for open-end generation.")
             pad_token_id = eos_token_id
 
-        if model.model.config.is_encoder_decoder:
+        if self.models[0].model.config.is_encoder_decoder:
             # add encoder_outputs to model_kwargs
-            model_kwargs = model.model._prepare_encoder_decoder_kwargs_for_generation(input_ids, model_kwargs)
+            model_kwargs = self.models[0].model._prepare_encoder_decoder_kwargs_for_generation(input_ids, model_kwargs)
 
             # set input_ids as decoder_input_ids
             if "decoder_input_ids" in model_kwargs:
                 input_ids = model_kwargs.pop("decoder_input_ids")
             else:
-                input_ids = model.model._prepare_decoder_input_ids_for_generation(
+                input_ids = self.models[0].model._prepare_decoder_input_ids_for_generation(
                     input_ids, decoder_start_token_id=decoder_start_token_id, bos_token_id=bos_token_id
                 )
 
@@ -80,13 +80,13 @@ class EnsembleGenerator:
                 raise ValueError("Make sure that `model_kwargs` include `encoder_outputs` of type `ModelOutput`.")
 
         if input_ids.shape[-1] >= max_length:
-            input_ids_string = "decoder_input_ids" if model.model.config.is_encoder_decoder else "input_ids"
+            input_ids_string = "decoder_input_ids" if self.models[0].model.config.is_encoder_decoder else "input_ids"
             print(
                 f"Input length of {input_ids_string} is {input_ids.shape[-1]}, but ``max_length`` is set to {max_length}."
                 "This can lead to unexpected behavior. You should consider increasing ``config.max_length`` or ``max_length``."
             )
 
-        logits_processor = model.model._get_logits_processor(
+        logits_processor = self.models[0].model._get_logits_processor(
             repetition_penalty=None,
             no_repeat_ngram_size=None,
             encoder_no_repeat_ngram_size=None,
@@ -98,7 +98,7 @@ class EnsembleGenerator:
             forced_bos_token_id=None,
             forced_eos_token_id=None,
             prefix_allowed_tokens_fn=None,
-            num_beams=1,
+            num_beams=num_beams,
             num_beam_groups=num_beam_groups,
             diversity_penalty=None
         )
@@ -151,12 +151,12 @@ class EnsembleGenerator:
 
                      # update sequence length
                     if eos_token_id is not None:
-                        sequence_lengths, unfinished_sequences = model.model._update_seq_length_for_generation(
+                        sequence_lengths, unfinished_sequences = self.models[0].model._update_seq_length_for_generation(
                             sequence_lengths, unfinished_sequences, cur_len, next_tokens == eos_token_id
                         )
 
                     # update model kwargs
-                    model_kwargs = model.model._update_model_kwargs_for_generation(
+                    model_kwargs = self.models[0].model._update_model_kwargs_for_generation(
                         outputs, model_kwargs, is_encoder_decoder=model.model.config.is_encoder_decoder
                     )
 
@@ -170,8 +170,8 @@ class EnsembleGenerator:
                     # increase cur_len
                     cur_len = cur_len + 1
 
-                pred = model.tokenizer.convert_ids_to_tokens(input_ids[0], skip_special_tokens=True)
-                pred = model.tokenizer.convert_tokens_to_string(pred).replace(' . ', '. ')
+                pred = self.models[0].tokenizer.convert_ids_to_tokens(input_ids[0], skip_special_tokens=True)
+                pred = self.models[0].tokenizer.convert_tokens_to_string(pred).replace(' . ', '. ')
 
                 return pred
 
