@@ -71,12 +71,12 @@ def evaluate_ensemble(paths, dataset, pool_type='mean'):
     for i in range(len(dataset['document'])):
         pred = model.generate_greedy_search(dataset['document'][i], pool_type=pool_type)
         if i < 2:
-            logging.info('The input document:')
-            logging.info(dataset['document'][i])
-            logging.info('The reference summary:')
-            logging.info(dataset['summary'][i])
-            logging.info('The predicted summary:')
-            logging.info(pred)
+            print('The input document:')
+            print(dataset['document'][i])
+            print('The reference summary:')
+            print(dataset['summary'][i])
+            print('The predicted summary:')
+            print(pred)
         results['reference_summary'].append(dataset['summary'][i])
         results['predicted_summary'].append(pred)
         scores = scorer.score(results['reference_summary'][0], results['predicted_summary'][0])
@@ -84,7 +84,7 @@ def evaluate_ensemble(paths, dataset, pool_type='mean'):
         results['rouge2'].append(scores['rouge2'][1])
         results['rougeL'].append(scores['rougeL'][2])
 
-    logging.info(f'Metrics:')
+    print(f'Metrics:')
     for m in ['rouge1', 'rouge2', 'rougeL']:
-        logging.info(f'Average {m} score: {sum(results[m]) / len(results[m])}')
-    logging.info('Done with evaluation.')
+        print(f'Average {m} score: {sum(results[m]) / len(results[m])}')
+    print('Done with evaluation.')
