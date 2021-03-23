@@ -6,8 +6,7 @@ from transformers.generation_stopping_criteria import validate_stopping_criteria
 from rouge_score import rouge_scorer
 
 from intunlu.finetunning import SummarizerModel
-from intunlu.generate_ensemble import generate
-from intunlu.train import load_data
+from intunlu.utils import load_data
 
 
 class EnsembleGenerator:
@@ -117,63 +116,63 @@ class EnsembleGenerator:
 
         with torch.no_grad():
     
-                while cur_len < max_length:
+            while cur_len < max_length:
 
-                    model_inputs = self.models[0].model.prepare_inputs_for_generation(input_ids, **model_kwargs)
+                model_inputs = self.models[0].model.prepare_inputs_for_generation(input_ids, **model_kwargs)
 
-                    next_token_logits = []
-                    for model in self.models:
+                next_token_logits = []
+                for model in self.models:
 
-                        outputs = model.model(
-                            **model_inputs,
-                            return_dict=True
-                        )
-
-                        next_token_logits.append(outputs.logits[:, -1, :])
-                    next_token_logits = torch.cat(next_token_logits, dim=0)
-
-                    if pool_type == 'mean':
-                        next_token_logits = torch.mean(next_token_logits, dim=0, keepdim=True)
-                    elif pool_type == 'max':
-                        next_token_logits = torch.max(next_token_logits, dim=0, keepdim=True)[0]
-                    else:
-                        raise ValueError(f'`pool_type={pool_type}` is not a recognized value.')
-
-                    next_tokens_scores = logits_processor(input_ids, next_token_logits)
-                    next_tokens = torch.argmax(next_tokens_scores, dim=-1)
-
-                    if eos_token_id is not None:
-                        assert pad_token_id is not None, "If eos_token_id is defined, make sure that pad_token_id is defined."
-                        next_tokens = next_tokens * unfinished_sequences + (pad_token_id) * (1 - unfinished_sequences)
-
-                    # add token and increase length by one
-                    input_ids = torch.cat([input_ids, next_tokens[:, None]], dim=-1)
-
-                     # update sequence length
-                    if eos_token_id is not None:
-                        sequence_lengths, unfinished_sequences = self.models[0].model._update_seq_length_for_generation(
-                            sequence_lengths, unfinished_sequences, cur_len, next_tokens == eos_token_id
-                        )
-
-                    # update model kwargs
-                    model_kwargs = self.models[0].model._update_model_kwargs_for_generation(
-                        outputs, model_kwargs, is_encoder_decoder=model.model.config.is_encoder_decoder
+                    outputs = model.model(
+                        **model_inputs,
+                        return_dict=True
                     )
 
-                    # stop when there is a </s> in each sentence, or if we exceed the maximum length
-                    if unfinished_sequences.max() == 0:
-                        break
+                    next_token_logits.append(outputs.logits[:, -1, :])
+                next_token_logits = torch.cat(next_token_logits, dim=0)
 
-                    if stopping_criteria(input_ids, None):
-                        break
+                if pool_type == 'mean':
+                    next_token_logits = torch.mean(next_token_logits, dim=0, keepdim=True)
+                elif pool_type == 'max':
+                    next_token_logits = torch.max(next_token_logits, dim=0, keepdim=True)[0]
+                else:
+                    raise ValueError(f'`pool_type={pool_type}` is not a recognized value.')
 
-                    # increase cur_len
-                    cur_len = cur_len + 1
+                next_tokens_scores = logits_processor(input_ids, next_token_logits)
+                next_tokens = torch.argmax(next_tokens_scores, dim=-1)
 
-                pred = self.models[0].tokenizer.convert_ids_to_tokens(input_ids[0], skip_special_tokens=True)
-                pred = self.models[0].tokenizer.convert_tokens_to_string(pred).replace(' . ', '. ')
+                if eos_token_id is not None:
+                    assert pad_token_id is not None, "If eos_token_id is defined, make sure that pad_token_id is defined."
+                    next_tokens = next_tokens * unfinished_sequences + (pad_token_id) * (1 - unfinished_sequences)
 
-                return pred
+                # add token and increase length by one
+                input_ids = torch.cat([input_ids, next_tokens[:, None]], dim=-1)
+
+                    # update sequence length
+                if eos_token_id is not None:
+                    sequence_lengths, unfinished_sequences = self.models[0].model._update_seq_length_for_generation(
+                        sequence_lengths, unfinished_sequences, cur_len, next_tokens == eos_token_id
+                    )
+
+                # update model kwargs
+                model_kwargs = self.models[0].model._update_model_kwargs_for_generation(
+                    outputs, model_kwargs, is_encoder_decoder=model.model.config.is_encoder_decoder
+                )
+
+                # stop when there is a </s> in each sentence, or if we exceed the maximum length
+                if unfinished_sequences.max() == 0:
+                    break
+
+                if stopping_criteria(input_ids, None):
+                    break
+
+                # increase cur_len
+                cur_len = cur_len + 1
+
+            pred = self.models[0].tokenizer.convert_ids_to_tokens(input_ids[0], skip_special_tokens=True)
+            pred = self.models[0].tokenizer.convert_tokens_to_string(pred).replace(' . ', '. ')
+
+        return pred
 
 
 if __name__ == '__main__':
