@@ -156,13 +156,11 @@ class SummaryDataModule(pl.LightningDataModule):
             train_dataset,
             valid_dataset,
             tokenizer,
-            batch_size,
-            max_num_samples=None
+            batch_size
     ):
         super().__init__()
         self.tokenizer = tokenizer
         self.batch_size = batch_size
-        self.max_num_samples = max_num_samples
         self.train = train_dataset
         self.valid = valid_dataset
 
